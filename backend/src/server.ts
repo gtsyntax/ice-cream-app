@@ -1,4 +1,5 @@
 import express, {Request, Response} from "express";
+import cors from "cors";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
@@ -9,6 +10,7 @@ import { User } from "./models/user";
 dotenv.config();
 const app = express();
 app.use(express.json());
+app.use(cors());
 
 const users: User[] = [];
 const PORT = process.env.PORT;
