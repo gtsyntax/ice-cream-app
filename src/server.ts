@@ -76,6 +76,57 @@ app.post(
     }
 )
 
+app.post(
+    "/api/auth/login",
+    [
+        body("email").isEmail().withMessage("Valid email is required"),
+        body("password").notEmpty().withMessage("Password is required"),
+    ],
+    async (req: Request, res: Response): Promise<void> => {
+        // Validate input
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            res.status(400).json({ errors: errors.array() });
+            return;
+        }
+
+        const { email, password } = req.body;
+
+        try {
+            // Find user by email
+            const user = users.find(user => user.email === email);
+            if (!user) {
+                res.status(401).json({ message: "Invalid email or password" });
+                return;
+            }
+
+            // Verify password
+            const isPasswordValid = await bcrypt.compare(password, user.password);
+            if (!isPasswordValid) {
+                res.status(401).json({ message: "Invalid email or password" });
+                return;
+            }
+
+            // Generate JWT token
+            const token = jwt.sign({ userId: user.id}, JWT_SECRET!, { expiresIn: "24h" });
+
+            res.status(200).json({
+                message: "Sign in successful",
+                token,
+                user: {
+                    id: user.id,
+                    firstName: user.firstName,
+                    lastName: user.lastName,
+                    email: user.email,
+                    phone: user.phone,
+                },
+            });
+        } catch (error) {
+            res.status(500).json({ message: "Server error during sign in" });
+        }
+    }
+)
+
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 })
